@@ -100,7 +100,7 @@ async function tick(){await refresh();isCust?rCust():rOwner()}
 /* customer */
 function rCust(){
   const head=`<div class="logo">${esc(S.logo)}</div><div class="brand">${esc(S.name)}</div>`;
-  const err=offline?'<div class="err">INTERNET YA SERVER MEIN MASLA HAI... DOBARA KOSHISH HO RAHI HAI</div>':'';
+  const err=offline?'<div class="err">INTERNET YA SERVER MEIN MASLA HAI... DOBARA KOSHISH HO RAHI HAI<br><small style="font-size:13px;letter-spacing:.4px">'+esc(lastErr)+'</small></div>':'';
   const it=ME&&Q.find(x=>x.id===ME);
   if(!it||it.status==='done'||it.status==='removed'){
     if(view==='form'){return} view='form';lastSt=null;
@@ -133,7 +133,7 @@ async function join(){
     const r=await api('rpc/join_queue','POST',{p_shop:SHOP,p_name:n,p_phone:p});
     const row=Array.isArray(r)?r[0]:r;ME=row.id;
     localStorage.setItem('sq_me_'+SHOP,JSON.stringify(ME));view='';await tick();
-  }catch(e){$('jb').disabled=false;$('je').innerHTML='<div class="err">JOIN NAHI HUA — DOBARA KOSHISH KAREIN</div>'}
+  }catch(e){$('jb').disabled=false;$('je').innerHTML='<div class="err">JOIN NAHI HUA — DOBARA KOSHISH KAREIN<br><small style="font-size:13px;letter-spacing:.4px">'+esc(String(e.message||e).slice(0,250))+'</small></div>'}
 }
 
 /* owner */
