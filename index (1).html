@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Queue</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#f4f6f2;--card:#fff;--tx:#0b1f14;--mu:#6b7a70;--g:#00b955;--gd:#0a7a35;--bd:#e3e8e2;--r:16px}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;background:var(--bg);color:var(--tx);letter-spacing:.8px;min-height:100vh}
+button,input,textarea{font-family:inherit;letter-spacing:.8px}
+.wrap{max-width:460px;margin:0 auto;padding:12px 14px 40px}
+.logo{width:60px;height:60px;border-radius:18px;background:#e3f8ec;color:var(--gd);display:flex;align-items:center;justify-content:center;font-size:40px;margin:12px auto 4px}
+.brand{text-align:center;font-size:36px;line-height:1}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-top:12px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+h2{font-size:28px;line-height:1}
+.sub{color:var(--mu);font-size:17px;margin-top:4px}
+label{display:block;font-size:19px;margin:12px 0 4px}
+input,textarea{width:100%;font-size:22px;padding:9px 12px;border:2px solid var(--bd);border-radius:12px;background:#fafcf9;color:var(--tx);outline:none}
+input:focus,textarea:focus{border-color:var(--g)}
+textarea{font-size:17px;letter-spacing:.4px;min-height:90px}
+.btn{width:100%;border:0;border-radius:999px;background:var(--g);color:#fff;font-size:24px;padding:11px;margin-top:14px;cursor:pointer;box-shadow:0 6px 14px rgba(0,185,85,.25)}
+.btn:active{transform:scale(.98)}.btn:disabled{opacity:.5}
+.btn.ghost{background:#e3f8ec;color:var(--gd);box-shadow:none}
+.small{font-size:17px;padding:7px 12px;margin:0;width:auto;box-shadow:none}
+.rm{background:#fdeaea;color:#c0392b;box-shadow:none}
+.big{font-size:96px;line-height:1;color:var(--g);text-align:center;margin:4px 0}
+.cap{text-align:center;color:var(--mu);font-size:19px;letter-spacing:4px}
+.center{text-align:center}
+.pill{display:flex;gap:8px;align-items:center;justify-content:center;font-size:24px;margin-top:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--g);animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.25}}
+.turn{background:var(--g);color:#fff;border-radius:var(--r);padding:20px 12px;text-align:center;margin-top:12px;animation:pop .6s}
+.turn .t{font-size:38px;line-height:1}.turn .n{font-size:90px;line-height:1.1}.turn .d{font-size:19px;margin-top:6px}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+.now{background:#e3f8ec;border-radius:var(--r);padding:13px;margin-top:12px}
+.now .k{font-size:17px;letter-spacing:3px;color:var(--gd)}.now .v{font-size:38px;line-height:1.1}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}
+.tk{min-width:44px;height:44px;border-radius:13px;background:#e3f8ec;color:var(--gd);display:flex;align-items:center;justify-content:center;font-size:26px}
+.nm{flex:1;font-size:23px;line-height:1}.nm small{display:block;font-size:15px;color:var(--mu);margin-top:3px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tabs{display:flex;gap:6px;margin-top:10px}
+.tabs button{flex:1;padding:8px;font-size:19px;border:0;border-radius:11px;background:#e9eee8;color:var(--tx);cursor:pointer}
+.tabs button.on{background:var(--g);color:#fff}
+.stats{display:flex;gap:8px;margin-top:10px}.stats div{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:14px;text-align:center;padding:6px}
+.stats b{display:block;font-size:32px;font-weight:400;color:var(--g);line-height:1.1}.stats span{font-size:15px;color:var(--mu)}
+#qr{display:flex;justify-content:center;margin:12px 0}
+.link{font-size:14px;word-break:break-all;color:var(--mu);text-align:center;letter-spacing:.4px}
+.empty{text-align:center;color:var(--mu);font-size:21px;padding:16px 0}
+.pw{text-align:center;color:var(--mu);font-size:15px;margin-top:18px}
+.err{background:#fdeaea;color:#c0392b;border-radius:11px;padding:8px;text-align:center;font-size:17px;margin-top:10px}
+@media print{.tabs,.btn,.link,.stats{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============ SETUP: apni Supabase details yahan likhein ============ */
+const SB_URL = 'https://fsxnbyvovctrkxyttyho.supabase.co';
+const SB_KEY = 'sb_publishable_1n41dQQwp2TXWYwa2xCogA_5nGjwyOb';
+/* ==================================================================== */
+
+const P=new URLSearchParams(location.search);
+const isCust=P.has('c');
+const SHOP=(P.get('s')||localStorage.getItem('sq_shop')||'mera-salon').toLowerCase().replace(/[^a-z0-9-]/g,'');
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DEF={name:'DIAMNOND SALON',logo:'D',cc:'92',msg:'Assalam o Alaikum {naam}! Aapka token number {token} hai. Ab aapki bari hai, barah-e-karam counter par aayein. {salon} aapka intezar kar raha hai.'};
+let lastErr='',S=Object.assign({},DEF),Q=[],offline=false,tab='q',view='',lastSt=null,ME=null;
+try{ME=JSON.parse(localStorage.getItem('sq_me_'+SHOP)||'null')}catch(e){}
+
+async function api(path,method='GET',body,prefer){
+  const h={apikey:SB_KEY,'Content-Type':'application/json'};
+  if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;
+  if(prefer)h.Prefer=prefer;
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{method,headers:h,body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+
+/* chime */
+let ac;function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+function chime(){unlock();if(!ac)return;[660,880,1100].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+i*.25;g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.5);o.start(t);o.stop(t+.5)});if(navigator.vibrate)navigator.vibrate([300,150,300])}
+
+/* data */
+async function refresh(){
+  try{
+    const sh=await api('shops?id=eq.'+SHOP+'&select=*');
+    if(sh&&sh[0])S=Object.assign({},DEF,sh[0]);
+    Q=await api('queue?shop=eq.'+SHOP+'&order=token.asc&select=*');
+    offline=false;
+  }catch(e){offline=true;lastErr=String(e.message||e).slice(0,200);console.error(e)}
+}
+async function tick(){await refresh();isCust?rCust():rOwner()}
+
+/* customer */
+function rCust(){
+  const head=`<div class="logo">${esc(S.logo)}</div><div class="brand">${esc(S.name)}</div>`;
+  const err=offline?'<div class="err">INTERNET YA SERVER MEIN MASLA HAI... DOBARA KOSHISH HO RAHI HAI</div>':'';
+  const it=ME&&Q.find(x=>x.id===ME);
+  if(!it||it.status==='done'||it.status==='removed'){
+    if(view==='form'){return} view='form';lastSt=null;
+    const m=ME&&it?(it.status==='done'?'AAPKI PICHLI BARI KHATAM HO CHUKI HAI. DOBARA JOIN KAREIN.':'AAPKO QUEUE SE HATA DIYA GAYA HAI. DOBARA JOIN KAREIN.'):'APNA NAAM AUR WHATSAPP NUMBER LIKHEIN';
+    $('app').innerHTML=head+`<div class="card"><h2>QUEUE MEIN SHAMIL HOEN</h2><div class="sub">${m}</div>
+    <label>POORA NAAM</label><input id="fn" placeholder="Aapka naam" autocomplete="name">
+    <label>WHATSAPP NUMBER</label><input id="ph" type="tel" inputmode="tel" placeholder="03001234567">
+    <button class="btn" id="jb" onclick="join()">QUEUE JOIN KAREIN</button><div id="je"></div></div>${err}<div class="pw">POWERED BY SMART QUEUE</div>`;
+    return;}
+  view='tok';
+  const ahead=Q.filter(x=>x.status==='waiting'&&x.token<it.token).length,cur=Q.find(x=>x.status==='serving');
+  if(it.status==='serving'){
+    if(lastSt&&lastSt!=='serving')chime();
+    $('app').innerHTML=head+`<div class="turn"><div class="t">AAPKI BARI HAI!</div><div class="d">BARAH-E-KARAM COUNTER PAR AAYEIN — ${esc(S.name)} AAP KA INTEZAR KAR RAHA HAI</div><div class="n">#${it.token}</div></div>${err}<div class="pw">POWERED BY SMART QUEUE</div>`;
+  }else{
+    $('app').innerHTML=head+`<div class="card center"><h2 style="color:var(--gd)">KAMYABI SE JOIN HO GAYE</h2>
+    <div class="cap" style="margin-top:14px">AAPKA QUEUE NUMBER</div><div class="big">#${it.token}</div>
+    <div class="pill">${ahead===0?'AAP AGLE HAIN':ahead+' LOG AAPSE PEHLE HAIN'}</div>
+    <div class="pill"><span class="dot"></span>INTEZAR KAREIN...</div>
+    <div class="sub" style="margin-top:18px">AB SERVE HO RAHA: ${cur?'#'+cur.token:'KOI NAHI'}</div>
+    <div class="sub" style="margin-top:14px">YEH PAGE KHULA RAKHEIN — YEH KHUD UPDATE HOTA HAI AUR AAPKI BARI PAR AWAZ AAYEGI</div></div>${err}<div class="pw">POWERED BY SMART QUEUE</div>`;
+  }
+  lastSt=it.status;
+}
+async function join(){
+  unlock();const n=$('fn').value.trim(),p=$('ph').value.trim();
+  if(!n){alert('Pehle apna naam likhein');return}
+  $('jb').disabled=true;
+  try{
+    const r=await api('rpc/join_queue','POST',{p_shop:SHOP,p_name:n,p_phone:p});
+    const row=Array.isArray(r)?r[0]:r;ME=row.id;
+    localStorage.setItem('sq_me_'+SHOP,JSON.stringify(ME));view='';await tick();
+  }catch(e){$('jb').disabled=false;$('je').innerHTML='<div class="err">JOIN NAHI HUA — DOBARA KOSHISH KAREIN</div>'}
+}
+
+/* owner */
+function wa(it){
+  let p=(it.phone||'').replace(/\D/g,'');if(!p)return'';
+  if(p.startsWith('0'))p=S.cc+p.slice(1);else if(!p.startsWith(S.cc)&&p.length<=10)p=S.cc+p;
+  const m=S.msg.replace(/{naam}/g,it.name).replace(/{token}/g,it.token).replace(/{salon}/g,S.name);
+  return'https://wa.me/'+p+'?text='+encodeURIComponent(m);
+}
+function rOwner(force){
+  if(tab==='s'&&!force)return;
+  const w=Q.filter(x=>x.status==='waiting'),cur=Q.find(x=>x.status==='serving'),done=Q.filter(x=>x.status==='done').length;
+  const url=location.href.split('?')[0].split('#')[0]+'?c=1&s='+SHOP;
+  let b='';
+  if(tab==='q'){
+    b=`<div class="now"><div class="k">AB SERVE HO RAHA HAI</div><div class="v">${cur?'#'+cur.token+' — '+esc(cur.name):'ABHI KOI NAHI'}</div>
+    <button class="btn" onclick="callNext()">▸ AGLA BULAYEIN</button>${cur?'<button class="btn ghost" onclick="complete()">✓ MUKAMMAL KAREIN</button>':''}</div>
+    <div class="stats"><div><b>${w.length}</b><span>INTEZAR MEIN</span></div><div><b>${done}</b><span>MUKAMMAL</span></div><div><b>${Q.length}</b><span>KUL TOKEN</span></div></div>
+    <div class="card"><h2 style="font-size:24px">INTEZAR KI LIST</h2>${w.length?w.map(it=>`<div class="row"><div class="tk">${it.token}</div><div class="nm">${esc(it.name)}<small>${esc(it.phone||'NUMBER NAHI')}</small></div>
+    <div class="acts">${wa(it)?`<a class="btn ghost small" style="text-decoration:none" href="${wa(it)}" target="_blank">WHATSAPP</a>`:''}<button class="btn rm small" onclick="rem('${it.id}')">HATAYEIN</button></div></div>`).join(''):'<div class="empty">KOI INTEZAR MEIN NAHI</div>'}</div>`;
+  }else if(tab==='r'){
+    b=`<div class="card center"><h2>CUSTOMER QR</h2><div class="sub">YEH QR DUKAN PAR LAGAYEIN. CUSTOMER SCAN KARKE QUEUE JOIN KAREGA.</div><div id="qr"></div><div class="link">${esc(url)}</div>
+    <button class="btn ghost" onclick="window.print()">QR PRINT KAREIN</button></div>`;
+  }else{
+    b=`<div class="card"><h2>SETTING</h2><label>SHOP ID (SIRF ENGLISH HARF, NUMBER, -)</label><input id="si" value="${esc(SHOP)}">
+    <label>BRAND KA NAAM</label><input id="sn" value="${esc(S.name)}">
+    <label>LOGO KA HARF</label><input id="sl" maxlength="2" value="${esc(S.logo)}">
+    <label>COUNTRY CODE (PAKISTAN = 92)</label><input id="sc" value="${esc(S.cc)}" inputmode="numeric">
+    <label>WHATSAPP MESSAGE ({naam} {token} {salon})</label><textarea id="sm">${esc(S.msg)}</textarea>
+    <button class="btn" onclick="saveSet()">SETTING SAVE KAREIN</button>
+    <button class="btn rm" onclick="resetQ()">NAYA DIN — SAB RESET KAREIN</button></div>`;
+  }
+  $('app').innerHTML=`<div class="center" style="padding-top:10px"><div class="cap">AAJ KI QUEUE</div><div class="brand">${esc(S.name)}</div></div>
+  <div class="tabs"><button class="${tab==='q'?'on':''}" onclick="go('q')">QUEUE</button><button class="${tab==='r'?'on':''}" onclick="go('r')">QR CODE</button><button class="${tab==='s'?'on':''}" onclick="go('s')">SETTING</button></div>`+(offline?'<div class="err">SERVER SE CONNECT NAHI HO RAHA — SUPABASE SETUP CHECK KAREIN<br><small style="font-size:13px;letter-spacing:.4px">'+esc(lastErr)+'</small></div>':'')+b;
+  if(tab==='r'&&window.QRCode)new QRCode($('qr'),{text:url,width:240,height:240,colorDark:'#0a7a35'});
+}
+function go(t){tab=t;rOwner(true)}
+async function callNext(){
+  unlock();await refresh();
+  const n=Q.filter(x=>x.status==='waiting')[0];
+  try{
+    await api('queue?shop=eq.'+SHOP+'&status=eq.serving','PATCH',{status:'done'});
+    if(!n){await tick();alert('Koi intezar mein nahi hai');return}
+    await api('queue?id=eq.'+n.id,'PATCH',{status:'serving'});
+    const l=wa(n);if(l)window.open(l,'_blank');
+  }catch(e){alert('Masla aaya, dobara koshish karein')}
+  tick();
+}
+async function complete(){try{await api('queue?shop=eq.'+SHOP+'&status=eq.serving','PATCH',{status:'done'})}catch(e){}tick()}
+async function rem(id){if(!confirm('Is customer ko hata dein?'))return;try{await api('queue?id=eq.'+id,'PATCH',{status:'removed'})}catch(e){}tick()}
+async function saveSet(){
+  const id=($('si').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,''))||SHOP;
+  const row={id,name:$('sn').value.trim()||'MERA SALON',logo:($('sl').value.trim()||'S').toUpperCase(),cc:$('sc').value.replace(/\D/g,'')||'92',msg:$('sm').value};
+  try{await api('shops','POST',row,'resolution=merge-duplicates');localStorage.setItem('sq_shop',id);
+    if(id!==SHOP){location.search='?s='+id;return}
+    tab='q';tick()}catch(e){alert('Save nahi hua — Supabase setup check karein')}
+}
+async function resetQ(){if(!confirm('Naya din shuru karein? Saari queue saaf ho jayegi aur token #1 se shuru honge.'))return;try{await api('queue?shop=eq.'+SHOP,'DELETE')}catch(e){}tab='q';tick()}
+
+/* start */
+if(!SB_URL||!SB_KEY){
+  $('app').innerHTML=`<div class="card"><h2>SETUP ZAROORI HAI</h2><div class="sub" style="font-size:19px">FILE KE SHURU MEIN <b>SB_URL</b> AUR <b>SB_KEY</b> MEIN APNI SUPABASE DETAILS LIKHEIN, PHIR DOBARA UPLOAD KAREIN.</div></div>`;
+}else{ tick(); setInterval(tick,2000); }
+</script>
+</body>
+</html>
